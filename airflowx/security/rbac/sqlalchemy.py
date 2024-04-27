@@ -1,12 +1,17 @@
 import sqlalchemy
-from sqlalchemy.event import listen
 from sqlalchemy.engine import Engine
+from sqlalchemy.event import listen
+
+from airflowx.security.rbac.internal.provider import DbProvider
+from airflowx.security.rbac.internal.sql import QueryFactory
 
 
 class ProxyEngineWrapper(object):
     def __init__(self, engine: Engine, as_role: str):
         self._engine = engine
         self.role = as_role
+        self.provider = DbProvider(engine.name)
+        self.query_factory = QueryFactory.get_factory(self.provider)
         self._register_listener()
 
     @property
@@ -14,7 +19,7 @@ class ProxyEngineWrapper(object):
         return self._engine
 
     @classmethod
-    def role_aware_engine_from_url(cls, url: str, as_role: str) -> Engine:
+    def rbac_engine_from_url(cls, url: str, as_role: str) -> Engine:
         engine = sqlalchemy.create_engine(url)
         return ProxyEngineWrapper(engine, as_role).engine
 
@@ -24,6 +29,6 @@ class ProxyEngineWrapper(object):
 
     def _as_role(self, *args):
         dbapi_connection = args[0]
-        statement = f"set role {self.role};"
+        role_statement = self.query_factory.set_role_query(role=self.role)
         with dbapi_connection.cursor() as cursor:
-            cursor.execute(statement)
+            cursor.execute(role_statement)
