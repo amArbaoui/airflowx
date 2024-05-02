@@ -4,7 +4,7 @@ from airflowx.security.rbac.internal.provider import DbProvider
 from airflowx.security.rbac.internal.sql import QueryFactory
 
 
-class ProxySQLExecuteQueryOperator(SQLExecuteQueryOperator):
+class ProxyUserSQLExecuteQueryOperator(SQLExecuteQueryOperator):
     def __init__(self, db_provider: DbProvider, role: str, *args, **kwargs):
         self.query_factory = QueryFactory.get_factory(db_provider)
         self.role = role

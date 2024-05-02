@@ -6,10 +6,10 @@ from airflowx.security.rbac.internal.provider import DbProvider
 from airflowx.security.rbac.internal.sql import QueryFactory
 
 
-class ProxyEngineWrapper(object):
-    def __init__(self, engine: Engine, as_role: str):
+class ProxyUserEngineWrapper(object):
+    def __init__(self, engine: Engine, role: str):
         self._engine = engine
-        self.role = as_role
+        self.role = role
         self.provider = DbProvider(engine.name)
         self.query_factory = QueryFactory.get_factory(self.provider)
         self._register_listener()
@@ -19,9 +19,9 @@ class ProxyEngineWrapper(object):
         return self._engine
 
     @classmethod
-    def rbac_engine_from_url(cls, url: str, as_role: str) -> Engine:
+    def proxy_user_engine_from_url(cls, url: str, role: str) -> Engine:
         engine = sqlalchemy.create_engine(url)
-        return ProxyEngineWrapper(engine, as_role).engine
+        return ProxyUserEngineWrapper(engine, role).engine
 
     def _register_listener(self):
         listen(self.engine, "connect", self._as_role, retval=True)

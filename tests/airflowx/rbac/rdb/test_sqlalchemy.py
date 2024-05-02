@@ -2,9 +2,9 @@ import pytest
 import sqlalchemy
 from testcontainers.core.generic import DbContainer
 
+from airflowx.security import ProxyUserEngineWrapper
 from airflowx.security.rbac.internal.provider import DbProvider
 from airflowx.security.rbac.internal.sql import QueryFactory, AbstractQueryFactory
-from airflowx.security.rbac.sqlalchemy import ProxyEngineWrapper
 
 
 class TestProxyEngineWrapper:
@@ -20,9 +20,7 @@ class TestProxyEngineWrapper:
     ):
         query_factory = get_query_factory(provider)
         db = request.getfixturevalue(container)
-        engine = ProxyEngineWrapper.rbac_engine_from_url(
-            db.get_connection_url(), as_role=expected_role
-        )
+        engine = ProxyUserEngineWrapper.proxy_user_engine_from_url(db.get_connection_url(), role=expected_role)
         with engine.connect() as cnn:
             cnn.execute(sqlalchemy.text(query_factory.now_query()))
             assert get_current_user(query_factory, cnn) == expected_role
